@@ -8,10 +8,7 @@ from utils.utils import iterate_root_folder, process_file
 # TODO: Add support to filter just a single folder for speed-up
 # TODO: Add support for image/video separate folders
 # TODO: Add support for multiprocessing
-# TODO: Add to github
-# TODO: Add readme
 # TODO: Add duplicator remover
-# TODO: Add requirements.txt
 # TODO: Make executable file
 
 parser = argparse.ArgumentParser()
