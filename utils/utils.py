@@ -9,6 +9,7 @@ from logging import Logger
 import datetime
 import logging
 import ffmpeg
+from tqdm import tqdm
 import PIL
 from PIL import Image
 from PIL.ExifTags import TAGS
@@ -24,7 +25,7 @@ IMAGE_EXTENSIONS = ["jpg", "JPG", "png", "PNG", "ppm", "PPM",
 VIDEO_EXTENSIONS = ["mov", "MOV", "mp4", "MP4", "avi", "AVI"]
 
 # Define date tags
-date_tags = ['DateTimeOriginal', 'DateTime' ,'DateTimeDigitized', 'PreviewDateTime']
+date_tags = ['DateTimeOriginal', 'DateTime', 'DateTimeDigitized', 'PreviewDateTime']
 DATE_TAGS = []
 for tag_number, tag in TAGS.items():
     if tag in date_tags:
@@ -100,6 +101,23 @@ def get_video_creation_date(video_path):
         return m_ti
 
 
+def get_number_of_processable_files(root_folder):
+    """
+    Get the number of processable files in the root folder
+    Args:
+        root_folder (str): The root folder to start the iteration from.
+    Returns:
+        int: The number of processable files in the root folder.
+    """
+    count = 0
+    for root, _, files in os.walk(root_folder):
+        for file in files:
+            if (file.lower().endswith(tuple(VIDEO_EXTENSIONS)) or
+                    file.lower().endswith(tuple(IMAGE_EXTENSIONS))):
+                count += 1
+    return count
+
+
 def iterate_root_folder(root_folder, function):
     """
     Iterates through the root folder and its subfolders to find image and video files.
@@ -112,14 +130,16 @@ def iterate_root_folder(root_folder, function):
         list: A list of results returned by the function for each file found.
     """
 
+    paths = []
     results = []
     for root, _, files in os.walk(root_folder):
         for file in files:
             if (file.lower().endswith(tuple(VIDEO_EXTENSIONS)) or
                     file.lower().endswith(tuple(IMAGE_EXTENSIONS))):
+                paths.append(os.path.join(root, file))
 
-                file_path = os.path.join(root, file)
-                results.append(function(root_folder, file_path))
+    for file_path in tqdm(paths):
+        results.append(function(root_folder, file_path))
 
     return results
 
@@ -153,10 +173,11 @@ def check_if_on_correct_folder(root_folder, image_path, creation_date):
     Returns:
         bool: True if the image is in the correct folder, False otherwise.
     """
-    date_folder = image_path[len(root_folder)+1:].split(os.path.sep)[0]
+    date_folder = image_path[len(root_folder) + 1:].split(os.path.sep)[0]
     if date_folder == creation_date:
         return True
     return False
+
 
 def move_file_to_folder(file_path, date_folder, dont_move_if_exists=False):
     """
@@ -208,7 +229,7 @@ def process_file(root_folder, file_path, dont_move_if_exists=False):
         return None
 
     if creation_date is None:
-        destiny_folder  = create_date_folder(root_folder, "Unsorted")
+        destiny_folder = create_date_folder(root_folder, "Unsorted")
         new_path = move_file_to_folder(file_path, destiny_folder, dont_move_if_exists)
         sorter_logger.info(f"Moving {file_path}:"
                            f" to {new_path} - time taken: {time.perf_counter() - t_0:.2f}")
@@ -217,11 +238,11 @@ def process_file(root_folder, file_path, dont_move_if_exists=False):
         creation_date_yyyy_mm = f"{creation_date[:4]}-{creation_date[5:7]}"
         folder_check = check_if_on_correct_folder(root_folder, file_path, creation_date_yyyy_mm)
         if not folder_check:
-            destiny_folder  = create_date_folder(root_folder, creation_date_yyyy_mm)
+            destiny_folder = create_date_folder(root_folder, creation_date_yyyy_mm)
             new_path = move_file_to_folder(file_path, destiny_folder, dont_move_if_exists)
             sorter_logger.info(f"Moving {file_path}:"
                                f" to {new_path} - time taken: {time.perf_counter() - t_0:.2f}")
         else:
-            destiny_folder  = os.path.join(root_folder, creation_date_yyyy_mm)
+            destiny_folder = os.path.join(root_folder, creation_date_yyyy_mm)
             sorter_logger.info(f"File {file_path} already in {destiny_folder}"
                                f" - time taken: {time.perf_counter() - t_0:.2f}")
