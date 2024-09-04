@@ -4,7 +4,6 @@ Gallery date sorter utils
 """
 
 import os
-import time
 from logging import Logger
 import datetime
 import logging
