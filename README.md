@@ -49,7 +49,7 @@ The tool comes with a simple and intuitive GUI that allows you to easily select 
 To start the application, run the following command:
 
 ```bash
-python main.py
+python gui.py
 ```
 
 This will launch the GUI, where you can select the folder to sort, configure your options, and start sorting.
